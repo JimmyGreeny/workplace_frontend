@@ -5,8 +5,8 @@ import helpers from "./helpers.js";
 import InputSpinner from "./InputSpinner.js";
 import AddSorMRowButton from "./AddSorMRowButton.js";
 import ServicesData from "./services.json";
-import { useSelector, shallowEqual  } from 'react-redux'
-import { selectCurrentToken } from "../auth/authSlice"
+import { useSelector, shallowEqual } from 'react-redux'
+//import { selectCurrentToken } from "../auth/authSlice"
 import InvoicesList from "./InvoicesList.js"
 import MsList from "./MsList.js"
 import NewMaterialBtn from "./NewMaterialBtn.js"
@@ -17,14 +17,12 @@ import { useUpdateMaterialMutation } from "./materialsApiSlice"
 
 const Invoice = () => {
 
-
-
-
   console.log("Hi Invoice");
   const s_VATpercent = 20;
   const m_VATpercent = 20;
 
   const [serv_rows, setServices] = useState([]);
+
   const handleAddService = () => {
     const empty_s_row = helpers.newServRow();
     setServices([...serv_rows, empty_s_row]);
@@ -32,10 +30,24 @@ const Invoice = () => {
   };
 
   const [material_rows, setMaterials] = useState([]);
+
   const handleAddMaterial = () => {
     const empty_m_row = helpers.newMaterialRow();
     setMaterials([...material_rows, empty_m_row]);
     console.log(empty_m_row);
+  };
+
+  const editServiceRow = attrs => {
+
+    setServices(prevState => {
+      const newState = prevState.map(obj => {
+        if (obj.id === attrs.id)
+          return Object.assign({}, obj, attrs);
+        return obj;
+      });
+      //setInvoice({...invoice, materialRows: newState});
+      return newState;
+    });
   };
 
   const editMaterialRow = attrs => {
@@ -53,10 +65,10 @@ const Invoice = () => {
 
   const [invoices, setInvoices] = useState([]);
 
-  const token = useSelector(selectCurrentToken)
+  //const token = useSelector(selectCurrentToken)
 
   //const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySW5mbyI6eyJ1c2VybmFtZSI6IkRhbkQiLCJyb2xlcyI6WyJFbXBsb3llZSIsIk1hbmFnZXIiLCJBZG1pbiJdfSwiaWF0IjoxNzAyOTM2MTUyLCJleHAiOjE3MDI5MzcwNTJ9.39f-RkKbmdlye37scH7gxhQdKLTVEgznrbWJ1RYX560"
-  console.log(token);
+  //console.log(token);
 
   const deleteServiceRow = serv_rowId => {
     setServices(current =>
@@ -73,7 +85,7 @@ const Invoice = () => {
       })
     );
   };
-
+/*
   const handleEditService = attrs => {
     setServices(prevState => {
       const newState = prevState.map(obj => {
@@ -90,40 +102,40 @@ const Invoice = () => {
     });
     //setInvoice({...invoice, serviceRows: newState});
   };
-
-  const handleEditMaterial = attrs => {
-    setMaterials(prevState => {
-      const newState = prevState.map(obj => {
-        if (obj.id === attrs.id)
-          return Object.assign({}, obj, {
-            item: attrs.item,
-            measure: attrs.measure,
-            price: Number(attrs.price),
-            count: attrs.count,
-            item_id: attrs.item_id
-          });
-        return obj;
-      });
-      //setInvoice({...invoice, materialRows: newState});
-      return newState;
-    });
-  };
-
-  const handleEditMaterialPrice = attrs => {
-    if (attrs.item_id !== "") {
+  
+    const handleEditMaterial = attrs => {
       setMaterials(prevState => {
         const newState = prevState.map(obj => {
-          if (obj.item_id === attrs.item_id)
+          if (obj.id === attrs.id)
             return Object.assign({}, obj, {
-              price: attrs.price
+              item: attrs.item,
+              measure: attrs.measure,
+              price: Number(attrs.price),
+              count: attrs.count,
+              item_id: attrs.item_id
             });
           return obj;
         });
+        //setInvoice({...invoice, materialRows: newState});
         return newState;
       });
-    }
-  };
-
+    };
+  
+    const handleEditMaterialPrice = attrs => {
+      if (attrs.item_id !== "") {
+        setMaterials(prevState => {
+          const newState = prevState.map(obj => {
+            if (obj.item_id === attrs.item_id)
+              return Object.assign({}, obj, {
+                price: attrs.price
+              });
+            return obj;
+          });
+          return newState;
+        });
+      }
+    };
+  */
   const [totallS, setTotallService] = useState([]);
   const onSetTotallService = totall => {
     setTotallService(totall);
@@ -144,13 +156,13 @@ const Invoice = () => {
         serv_rows={serv_rows}
         services={ServicesData}
         onTrashClickService={deleteServiceRow}
-        onEditService={handleEditService}
+        editServiceRow={editServiceRow}
         onAddService={handleAddService}
         s_VATpercent={s_VATpercent}
         material_rows={material_rows}
         onTrashClickMaterial={deleteMaterialRow}
-        onEditMaterial={handleEditMaterial}
-        handleEditMaterialPrice={handleEditMaterialPrice}
+        //onEditMaterial={handleEditMaterial}
+        //handleEditMaterialPrice={handleEditMaterialPrice}
         onAddMaterial={handleAddMaterial}
         m_VATpercent={m_VATpercent}
         onSetTotallService={onSetTotallService}
@@ -257,10 +269,11 @@ function InvoiceList(props) {
   const serv_rows = props.serv_rows.map(serv_row => (
     <ServiceRow
       key={serv_row.id}
-      id={serv_row.id}
-      title={serv_row.title}
+      serv_row={serv_row}
+      //id={serv_row.id}
+      //title={serv_row.title}
       onTrashClickService={props.onTrashClickService}
-      onEditService={props.onEditService}
+      editServiceRow={props.editServiceRow}
       services={props.services}
       s_VATpercent={props.s_VATpercent}
     />
@@ -371,7 +384,9 @@ function InvoiceList(props) {
 function ServiceRow(props) {
   const s_VATpercent = props.s_VATpercent;
   const vat = 1 + s_VATpercent / 100;
-  const [price, handleChange] = useState(0);
+
+  const [price, setPriceState] = useState(0);
+  const [s_row, s_rowSetChange] = useState(props.serv_row) //PROBABLY NOT CORRECT!
   const [n, setN] = useState(0);
   //const [count, setCount] = useState("");
   const services = props.services;
@@ -379,12 +394,22 @@ function ServiceRow(props) {
   const updateCount = e => {
     setN(e);
     //console.log(e);
+    s_rowSetChange((prevState) => {
+      const newState = {
+        ...prevState,
+        count: e
+      }
+      props.editServiceRow(newState)
+      return newState
+    });
+    /*
     props.onEditService({
       id: props.id,
       title: props.title,
       price: price,
       count: e
     });
+    */
   };
 
   const updatePrice = e => {
@@ -396,17 +421,29 @@ function ServiceRow(props) {
       .filter(service => service.id === Number(e.target.value))
       .map(filteredService => filteredService.title)
 
-    handleChange(selected_price);
+    setPriceState(selected_price);
+
+    s_rowSetChange((prevState) => {
+      const newState = {
+        ...prevState,
+        title: selected_title,
+        price: selected_price,
+      }
+      props.editServiceRow(newState)
+      return newState
+    });
+    /*
     props.onEditService({
       id: props.id,
       title: selected_title,
       price: selected_price,
       count: n
     });
+    */
   };
 
   const handleTrashClick = () => {
-    props.onTrashClickService(props.id);
+    props.onTrashClickService(props.serv_row.id);
   };
 
 
@@ -497,18 +534,21 @@ function SumRows(props) {
 
 
 function MaterialRow(props) {
+  const m_VATpercent = props.m_VATpercent;
+  const vat = 1 + m_VATpercent / 100;
+
   const dispatch = useDispatch()
 
   const [price, setPriceState] = useState(0);
-  const [m_row, m_rowSetChange] = useState(props.material_row) //NOT CORRECT!
+  const [m_row, m_rowSetChange] = useState(props.material_row) //PROBABLY NOT CORRECT!
 
   const selectPriceById = (state, todoId) => {
     return state.price.filter(record => record.item_id === todoId).map(item => item.price)
   }
-  const price_reduxStore = useSelector(state => selectPriceById(state, m_row.item_id),shallowEqual)
+  const price_reduxStore = useSelector(state => selectPriceById(state, m_row.item_id), shallowEqual)
 
-  useEffect(() => {  
-    if(price_reduxStore?.length) {
+  useEffect(() => {
+    if (price_reduxStore?.length) {
       //const result = Number(record)
       setPriceState(Number(price_reduxStore))
 
@@ -522,13 +562,6 @@ function MaterialRow(props) {
       });
     }
   }, [price_reduxStore]);
-
-
-
-  const m_VATpercent = props.m_VATpercent;
-  const vat = 1 + m_VATpercent / 100;
-
-
 
   const [n, setN] = useState(0);
 
@@ -646,12 +679,12 @@ function MaterialRow(props) {
     });
     //handleChange(e.target.value);
     //setInpkey(e.target.selectedIndex);
-              //props.handleEditMaterialPrice({
-              //  item_id: String(material_id),
-              //  price: e.target.value
-              //});
+    //props.handleEditMaterialPrice({
+    //  item_id: String(material_id),
+    //  price: e.target.value
+    //});
     //console.log(props.item_id);
-    dispatch(setPrice([{item_id: String(props.material_row.item_id), price: Number(e.target.value)}]))
+    dispatch(setPrice([{ item_id: String(m_row.item_id), price: Number(e.target.value) }]))
   };
 
   const handleTrashClick = () => {
